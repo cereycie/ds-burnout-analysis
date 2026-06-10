@@ -32,11 +32,16 @@ Burnout akademik pada mahasiswa adalah masalah yang sering tidak terdeteksi hing
 | `mbi_questions_clean.csv` | ~2.000 | `EX1-EX5`, `CY1-CY4`, `EF1-EF6` | `fatigue_score`, `risk_level` |
 | `curhat_nlp_clean.csv` | ~10.000 | `text_curhat` | `emotion` |
 
-Catatan: kolom `Stress_Level` pada dataset lifestyle bertipe string ordinal (`'Low'`, `'Moderate'`, `'High'`). Kolom `dim_exhaustion`, `dim_cynicism`, `dim_efficacy_inv` tidak ada di file clean dan dihitung secara on-the-fly dari item EX/CY/EF.
-
 ### Supporting (4 dataset pendukung)
 
 `sleep_insomnia_clean.csv`, `stress_indicators_clean.csv`, `study_behavior_clean.csv`, `sleep_quality_clean.csv`
+
+### Catatan Penting Kolom
+
+- `student_lifestyle_clean.csv` menggunakan `Title_Case` (contoh: `Study_Hours_Per_Day`, `Stress_Level`)
+- `Stress_Level` bertipe string ordinal: `'Low'`, `'Moderate'`, `'High'` (bukan numerik)
+- `mbi_questions_clean.csv` tidak memiliki kolom `dim_*`; semua dimensi dihitung on-the-fly dari item EX/CY/EF
+- `curhat_nlp_clean.csv` tidak memiliki `word_count` atau `stress_keyword_count`; keduanya dihitung dari `text_curhat`
 
 ---
 
@@ -44,35 +49,37 @@ Catatan: kolom `Stress_Level` pada dataset lifestyle bertipe string ordinal (`'L
 
 ```
 hapi_project/
-├── data/
-│   ├── raw/
-│   │   ├── model_ready/          <- 4 file CSV kotor (input wrangling)
-│   │   └── supporting/           <- 4 file CSV kotor (input wrangling)
-│   └── clean/
-│       ├── model_ready/          <- output notebook 01-04
-│       └── supporting/           <- output notebook 05-07
-├── notebooks/
-│   ├── 01_k5_mbi_questions_wrangling.ipynb
-│   ├── 02_k3_nlp_curhat_wrangling.ipynb
-│   ├── 03_k1_student1m_wrangling.ipynb
-│   └── 04_k2_study_habit_wrangling.ipynb
-├── notebooks_supporting/
-│   ├── 05_support_k1_stress_indicators.ipynb
-│   ├── 06_support_k2_study_behavior.ipynb
-│   └── 07_support_k3_sleep_insomnia.ipynb
-├── nb08/
-│   └── 08_eda_model_ready.ipynb
-├── nb09/
-│   └── 09_eda_explanatory_analysis.ipynb
-├── nb10/
-│   └── 10_ab_testing.ipynb
 ├── dashboard/
 │   ├── app.py
 │   └── requirements.txt
-└── docs/
-    ├── data_dictionary.md
-    ├── fatigue_score_methodology.md
-    └── ai_engineer_guide.md
+├── data/
+│   ├── clean/
+│   │   ├── model_ready/              <- output notebook 01-04
+│   │   └── supporting/               <- output notebook 05-07
+│   ├── preprocessed/
+│   │   ├── burnout_fatigue_preproc...
+│   │   ├── curhat_nlp_preprocessed...
+│   │   ├── mbi_questions_preproces...
+│   │   └── student_lifestyle_preproc...
+│   └── raw/
+│       ├── model_ready/              <- 4 file CSV kotor
+│       └── supporting/               <- 4 file CSV kotor
+├── notebook/
+│   ├── model ready wrangling - p.../
+│   │   ├── 01_mbi_questions_wrangling.ipynb
+│   │   ├── 02_nlp_curhat_wrangling.ipynb
+│   │   ├── 03_student1m_wrangling.ipynb
+│   │   └── 04_study_habit_wrangling.ipynb
+│   ├── supporting wrangling - EDA/
+│   │   ├── 05_stress_indicators_wrangling.ipynb
+│   │   ├── 06_study_behavior_wrangling.ipynb
+│   │   └── 07_insomnia_wrangling_eda.ipynb
+│   ├── 08_eda_model_ready.ipynb
+│   ├── 09_eda_explanatory.ipynb
+│   └── 10_ab_testing.ipynb
+├── .gitattributes
+├── README.md
+└── url.txt
 ```
 
 ---
@@ -80,53 +87,71 @@ hapi_project/
 ## Alur Pipeline
 
 ```
-Raw Data
+data/raw/
    |
    v
-NB 01-04: Data Wrangling & Cleaning
+notebook/model ready wrangling - p.../  (NB 01-04)
    |
    v
-NB 05-07: EDA Supporting Datasets
+data/clean/model_ready/  +  data/clean/supporting/
    |
    v
-NB 08: EDA 4 Dataset Model-Ready
+notebook/supporting wrangling - EDA/  (NB 05-07)
    |
    v
-NB 09: EDA Eksplanatif (15 Business Questions)
+notebook/08_eda_model_ready.ipynb
    |
    v
-NB 10: A/B Testing
+notebook/09_eda_explanatory.ipynb
    |
    v
-Streamlit Dashboard
+notebook/10_ab_testing.ipynb
+   |
+   v
+dashboard/app.py
 ```
 
-**Urutan eksekusi wajib:** NB 01-04 harus dijalankan sebelum NB 08-10 dan dashboard, karena file clean CSV dihasilkan di tahap wrangling.
+**Urutan eksekusi wajib:** NB 01-04 harus selesai dijalankan sebelum NB 08-10 dan dashboard, karena file clean CSV dihasilkan di tahap wrangling.
 
 ---
 
 ## Notebook
 
-### NB 01-04: Data Wrangling
+### NB 01-04: Data Wrangling (`notebook/model ready wrangling - p.../`)
 
-Membersihkan dan menstandarkan 4 dataset model-ready dari kondisi kotor (duplikat, tipe data salah, nilai hilang, inkonsistensi format).
+Membersihkan dan menstandarkan 4 dataset model-ready dari kondisi kotor: duplikat, tipe data salah, nilai hilang, dan inkonsistensi format.
 
-### NB 05-07: EDA Supporting
+| File | Dataset |
+|---|---|
+| `01_mbi_questions_wrangling.ipynb` | MBI Questions |
+| `02_nlp_curhat_wrangling.ipynb` | Curhat NLP |
+| `03_student1m_wrangling.ipynb` | Burnout Fatigue (1 juta baris) |
+| `04_study_habit_wrangling.ipynb` | Student Lifestyle |
+
+### NB 05-07: EDA Supporting (`notebook/supporting wrangling - EDA/`)
 
 EDA pada dataset pendukung yang mencakup indikator stres, kebiasaan belajar, dan pola tidur/insomnia.
 
+| File | Dataset |
+|---|---|
+| `05_stress_indicators_wrangling.ipynb` | Stress Indicators |
+| `06_study_behavior_wrangling.ipynb` | Study Behavior |
+| `07_insomnia_wrangling_eda.ipynb` | Sleep Insomnia |
+
 ### NB 08: EDA 4 Dataset Model-Ready
 
-EDA bertahap pada 4 dataset utama mengikuti kerangka:
+File: `notebook/08_eda_model_ready.ipynb`
+
+EDA bertahap pada 4 dataset utama dengan kerangka:
 
 - **Data Profiling** - shape, dtypes, missing values, duplikat, statistik deskriptif
-- **Univariat** - histogram (satu warna solid), boxplot deteksi outlier, bar distribusi target
+- **Univariat** - histogram satu warna solid, boxplot deteksi outlier, bar distribusi target
 - **Bivariat** - scatter plot + trendline, boxplot per kelompok
 - **Multivariat** - heatmap korelasi (RdBu_r), uji VIF multikolinearitas, scatter 3 variabel double-encoding
 
 ### NB 09: EDA Eksplanatif (15 Business Questions)
 
-Menjawab 15 pertanyaan bisnis yang dibagi ke dalam 4 kategori:
+File: `notebook/09_eda_explanatory.ipynb`
 
 | Kategori | BQ | Pertanyaan |
 |---|---|---|
@@ -137,29 +162,35 @@ Menjawab 15 pertanyaan bisnis yang dibagi ke dalam 4 kategori:
 
 ### NB 10: A/B Testing
 
+File: `notebook/10_ab_testing.ipynb`
+
 Menguji apakah intervensi personal (berbasis fatigue score) lebih efektif dari intervensi generik dalam meningkatkan penggunaan fitur wellness.
 
 **Desain:**
-- Grup A: intervensi generik (notifikasi standar), n = 1.000
-- Grup B: intervensi personal (berdasarkan profil fatigue), n = 1.000
-- Metrik: conversion rate fitur wellness
-- H0: P_A = P_B
-- H1: P_A != P_B (two-sided)
-- Alpha: 0.05
+
+| Parameter | Nilai |
+|---|---|
+| Grup A | Intervensi generik (notifikasi standar), n = 1.000 |
+| Grup B | Intervensi personal (berdasarkan profil fatigue), n = 1.000 |
+| Metrik | Conversion rate fitur wellness |
+| H0 | P_A = P_B |
+| H1 | P_A != P_B (two-sided) |
+| Alpha | 0.05 |
 
 **Analisis yang dilakukan:**
-- Simulasi data binomial (`np.random.seed(42)`)
-- Z-test proporsi + Chi-square validasi silang
+
+- Simulasi data binomial dengan `np.random.seed(42)`
+- Z-test proporsi + Chi-square sebagai validasi silang
 - 95% Confidence Interval untuk selisih proporsi
-- Cohen's h (effect size)
+- Cohen's h untuk effect size
 - Analisis sensitivitas alpha (0.01, 0.05, 0.10)
-- Segmentasi per tahun akademik
+- Segmentasi per tahun akademik (Freshman, Sophomore, Senior)
 
 ---
 
 ## Dashboard Streamlit
 
-5 halaman utama:
+File: `dashboard/app.py`
 
 | Halaman | Isi |
 |---|---|
@@ -179,8 +210,9 @@ cd hapi
 # 2. Install dependencies
 pip install -r dashboard/requirements.txt
 
-# 3. Jalankan notebook 01-04 terlebih dahulu untuk menghasilkan data clean
-# (buka di Jupyter dan run all)
+# 3. Jalankan notebook 01-04 terlebih dahulu
+# Buka Jupyter, masuk ke notebook/model ready wrangling - p.../
+# Jalankan dari NB01 sampai NB04 secara berurutan
 
 # 4. Jalankan dashboard dari root folder
 streamlit run dashboard/app.py
@@ -198,33 +230,22 @@ streamlit run dashboard/app.py
 | Dashboard | `streamlit` |
 | Notebook | `jupyter` |
 
-Versi Python yang digunakan: **3.10+**
+Python: **3.10+**
 
 ---
 
 ## Prinsip Visualisasi
 
-Seluruh visualisasi dalam notebook dan dashboard mengikuti prinsip berikut:
+Seluruh visualisasi dalam notebook dan dashboard mengikuti aturan berikut:
 
 - **Palet warna**: 9 hex biru sekuensial saja (`#00bcff` sampai `#0034c8`), ditambah putih dan abu-abu. Tidak ada warna di luar palet.
 - **Darker-is-more**: nilai atau kategori yang lebih tinggi selalu mendapat warna lebih gelap.
 - **Histogram**: satu warna solid `#007ff1` dengan `edgecolor='white'`, tidak menggunakan gradasi.
-- **Scatter**: `alpha=0.3-0.4`, `color=C_MID` untuk menangani overplotting.
+- **Scatter**: `alpha=0.3-0.4`, `color=#007ff1` untuk menangani overplotting.
 - **Heatmap korelasi**: `cmap='RdBu_r'` dengan `linewidths=1.5, linecolor='white'`.
 - **Urutan ordinal**: menggunakan urutan manual (`RISK_ORDER`, `STRESS_ORDER_LS`), bukan `sorted()`.
-- **`sns.despine()`** diterapkan di semua grafik.
+- `sns.despine()` diterapkan di semua grafik.
 - Judul grafik dibuat singkat; keterangan panjang ditaruh di `st.caption()`.
-
----
-
-## Konvensi Nama Kolom
-
-Beberapa hal penting yang perlu diperhatikan saat bekerja dengan dataset ini:
-
-- `burnout_fatigue_clean.csv` menggunakan `snake_case` (contoh: `sleep_hours`, bukan `sleep_hours_per_day`)
-- `student_lifestyle_clean.csv` menggunakan `Title_Case` (contoh: `Study_Hours_Per_Day`, `Stress_Level`)
-- `mbi_questions_clean.csv` tidak memiliki kolom `dim_*`; semua dimensi dihitung on-the-fly
-- `curhat_nlp_clean.csv` tidak memiliki `word_count` atau `stress_keyword_count`; keduanya dihitung dari `text_curhat`
 
 ---
 
